@@ -1,0 +1,8 @@
+moduledir '/etc/puppetlabs/code/environments/production/modules'
+
+mod 'puppet-archive', '3.0.0'
+mod 'puppet-wget', '2.0.0'
+mod 'puppetlabs-apt', '5.0.1'
+mod 'puppetlabs-kubernetes', '3.0.1'
+mod 'puppetlabs-stdlib', '4.25.1'
+mod 'puppetlabs-translate', '1.0.0'
