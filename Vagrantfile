@@ -49,7 +49,7 @@ Vagrant.configure("2") do |config|
     worker02.vm.provision :shell, :inline => "puppet apply /vagrant/puppet/manifests/site.pp"
     worker02.vm.post_up_message = "
 To access this k8s cluster:
-1. Import the files/kubecfg.p12 to your computer's certificate store or web browser
+1. Import the files/kubecfg.p12 to your computer's certificate store or web browser with password 'puppet'
 
 2. Navigate to https://localhost:6443/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy (may need to relanch browser after step 1)
 

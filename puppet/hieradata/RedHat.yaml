@@ -19,10 +19,10 @@ hostdefaults:
   before: Class[kubernetes]
 
 kubernetes::node_label: "%{::fqdn}"
-kubernetes::kubernetes_version: 1.12.1
-kubernetes::kubernetes_package_version: 1.12.1
+kubernetes::kubernetes_version: 1.10.2
+kubernetes::kubernetes_package_version: 1.10.2
 kubernetes::container_runtime: docker
-kubernetes::cni_network_provider: https://cloud.weave.works/k8s/net?k8s-version=1.12.1
+kubernetes::cni_network_provider: https://cloud.weave.works/k8s/net?k8s-version=1.10.2
 kubernetes::cni_pod_cidr: 10.32.0.0/12
 kubernetes::etcd_initial_cluster: controller01=https://172.28.128.19:2380,controller02=https://172.28.128.20:2380
 kubernetes::etcd_peers:
