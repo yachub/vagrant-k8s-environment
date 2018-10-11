@@ -9,43 +9,45 @@ Vagrant.configure("2") do |config|
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://vagrantcloud.com/search.
   config.vm.box = "genebean/centos-7-puppet5"
-  config.vm.define "controller" do |controller|
-    controller.vm.hostname = "controller.localdomain"
-    controller.vm.network "private_network", ip: "172.28.128.20"
-    controller.vm.network "forwarded_port", guest: 6443, host: 6443
-    #controller.vm.provision :shell, :inline => "ln -sf /vagrant/puppet/hiera.yaml /etc/puppetlabs/puppet/hiera.yaml"
-    #controller.vm.provision :shell, :inline => "yum install -y redhat-lsb-core"
-    #controller.vm.provision :shell, :inline => "/opt/puppetlabs/puppet/bin/gem install r10k"
-    #controller.vm.provision :shell, :inline => "/opt/puppetlabs/puppet/bin/r10k puppetfile install --puppetfile=/vagrant/puppet/Puppetfile"
-    controller.vm.provision :shell, :inline => "puppet apply /vagrant/puppet/manifests/site.pp"
+  config.vm.define "controller01" do |controller01|
+    controller01.vm.hostname = "controller01.localdomain"
+    controller01.vm.network "private_network", ip: "172.28.128.19"
+    controller01.vm.network "forwarded_port", guest: 6443, host: 6443
+    # Allow puppet to run in background because we must wait until etcd starts on controller02
+    controller01.vm.provision :shell, :inline => "puppet apply /vagrant/puppet/manifests/site.pp > /dev/null 2>&1 &"
     # Something is out of order, a pre-flight check fails, run puppet again to resolve
-    controller.vm.provision :shell, :inline => "puppet apply /vagrant/puppet/manifests/site.pp"
-    controller.vm.provision "shell", path: "scripts/create-admin-user.sh"
+    #controller01.vm.provision :shell, :inline => "puppet apply /vagrant/puppet/manifests/site.pp"
+    #controller01.vm.provision "shell", path: "scripts/create-admin-user.sh"
   end
 
-  config.vm.define "worker1" do |worker1|
-    worker1.vm.hostname = "worker1.localdomain"
-    worker1.vm.network "private_network", ip: "172.28.128.21"
-    #worker1.vm.provision :shell, :inline => "ln -sf /vagrant/puppet/hiera.yaml /etc/puppetlabs/puppet/hiera.yaml"
-    #worker1.vm.provision :shell, :inline => "yum install -y redhat-lsb-core"
-    #worker1.vm.provision :shell, :inline => "/opt/puppetlabs/puppet/bin/gem install r10k"
-    #worker1.vm.provision :shell, :inline => "/opt/puppetlabs/puppet/bin/r10k puppetfile install --puppetfile=/vagrant/puppet/Puppetfile"
-    worker1.vm.provision :shell, :inline => "puppet apply /vagrant/puppet/manifests/site.pp"
+  config.vm.define "controller02" do |controller02|
+    controller02.vm.hostname = "controller02.localdomain"
+    controller02.vm.network "private_network", ip: "172.28.128.20"
+    controller02.vm.network "forwarded_port", guest: 6443, host: 7443
+    controller02.vm.provision :shell, :inline => "puppet apply /vagrant/puppet/manifests/site.pp"
+    controller02.vm.provision "shell", inline: "yum -y install sshpass"
+    # SSH back to controller01 because etcd will not initilize until both nodes are started
+    controller02.vm.provision "shell", inline: "sshpass -p 'vagrant' ssh -o StrictHostKeyChecking=no 172.28.128.20 'puppet apply /vagrant/puppet/manifests/site.pp'"
     # Something is out of order, a pre-flight check fails, run puppet again to resolve
-    worker1.vm.provision :shell, :inline => "puppet apply /vagrant/puppet/manifests/site.pp"
+    controller02.vm.provision :shell, :inline => "puppet apply /vagrant/puppet/manifests/site.pp"
+    controller02.vm.provision "shell", path: "scripts/create-admin-user.sh"
   end
 
-  config.vm.define "worker2" do |worker2|
-    worker2.vm.hostname = "worker2.localdomain"
-    worker2.vm.network "private_network", ip: "172.28.128.22"
-    #worker2.vm.provision :shell, :inline => "ln -sf /vagrant/puppet/hiera.yaml /etc/puppetlabs/puppet/hiera.yaml"
-    #worker2.vm.provision :shell, :inline => "yum install -y redhat-lsb-core"
-    #worker2.vm.provision :shell, :inline => "/opt/puppetlabs/puppet/bin/gem install r10k"
-    #worker2.vm.provision :shell, :inline => "/opt/puppetlabs/puppet/bin/r10k puppetfile install --puppetfile=/vagrant/puppet/Puppetfile"
-    worker2.vm.provision :shell, :inline => "puppet apply /vagrant/puppet/manifests/site.pp"
+  config.vm.define "worker01" do |worker01|
+    worker01.vm.hostname = "worker01.localdomain"
+    worker01.vm.network "private_network", ip: "172.28.128.21"
+    worker01.vm.provision :shell, :inline => "puppet apply /vagrant/puppet/manifests/site.pp"
     # Something is out of order, a pre-flight check fails, run puppet again to resolve
-    worker2.vm.provision :shell, :inline => "puppet apply /vagrant/puppet/manifests/site.pp"
-    worker2.vm.post_up_message = "
+    worker01.vm.provision :shell, :inline => "puppet apply /vagrant/puppet/manifests/site.pp"
+  end
+
+  config.vm.define "worker02" do |worker02|
+    worker02.vm.hostname = "worker02.localdomain"
+    worker02.vm.network "private_network", ip: "172.28.128.22"
+    worker02.vm.provision :shell, :inline => "puppet apply /vagrant/puppet/manifests/site.pp"
+    # Something is out of order, a pre-flight check fails, run puppet again to resolve
+    worker02.vm.provision :shell, :inline => "puppet apply /vagrant/puppet/manifests/site.pp"
+    worker02.vm.post_up_message = "
 To access this k8s cluster:
 1. Import the files/kubecfg.p12 to your computer's certificate store or web browser
 
